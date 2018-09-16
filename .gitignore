@@ -1,0 +1,7 @@
+node_modules/
+ecosystem.config.js
+ormconfig.json
+.env
+.DS_STORE
+coverage/
+dist/

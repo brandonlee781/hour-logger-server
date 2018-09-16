@@ -1,0 +1,10 @@
+type Project {
+  id: String!
+  name: String
+  color: String
+  favorite: Boolean
+  logs: [Log]
+  user: User
+  createdAt: String
+  updatedAt: String
+}
