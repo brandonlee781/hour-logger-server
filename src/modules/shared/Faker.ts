@@ -1,12 +1,39 @@
 import * as faker from 'faker';
 import { v4 as uuid } from 'uuid';
 import { parse, startOfHour, addHours, format } from 'date-fns';
-import { Project } from '../project';
-import { User } from '../user';
-import { Log } from '../log';
-import { Report } from '../report';
+import { Project } from '../project/project.entity';
+import { User } from '../user/user.entity';
+import { Log } from '../log/log.entity';
+import { Report } from '../report/report.entity';
+import { Client } from '../client/client.entity';
 
 export class Faker {
+  static generateClient(userDefault?: User, clientDefault: Partial<Client> = {}): Client {
+    return {
+      id: clientDefault.id || uuid(),
+      name: clientDefault.name || faker.company.companyName(),
+      address: clientDefault.address || faker.address.streetAddress(),
+      city: clientDefault.city || faker.address.city(),
+      state: clientDefault.state || faker.address.stateAbbr(),
+      zip: clientDefault.zip || faker.address.zipCode(),
+      user: userDefault || Faker.generateUser(),
+      createdAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
+      updatedAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
+    };
+  }
+
+  static generateClients(count: number, userDefault?: User): Client[] {
+    let n = 1;
+    const logs = [];
+
+    while (n <= count) {
+      logs.push(Faker.generateLog(userDefault));
+      n++;
+    }
+
+    return logs;
+  }
+
   static generateLog(userDefault?: User, projectDefault?: Project, defaultId?: string): Log {
     const duration = Math.round((Math.random() * 8) + 1);
     const start = startOfHour(faker.date.recent());
@@ -64,6 +91,7 @@ export class Faker {
       name: faker.internet.domainName(),
       color: faker.internet.color(),
       favorite: true,
+      client: Faker.generateClient(),
       createdAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
       updatedAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
     };

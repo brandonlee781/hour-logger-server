@@ -1,11 +1,12 @@
 const webpack = require('webpack');
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 module.exports = {
   entry: ['webpack/hot/poll?1000', './src/main.hmr.ts'],
   watch: true,
-  target: 'async-node',
+  target: 'node',
   externals: [
     nodeExternals({
       whitelist: ['webpack/hot/poll?1000'],
@@ -26,6 +27,11 @@ module.exports = {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
+    new CircularDependencyPlugin({
+      exclude: /node_modules/,
+      failOnError: true,
+      cwd: process.cwd(),
+    })
   ],
   output: {
     path: path.join(__dirname, 'dist'),
