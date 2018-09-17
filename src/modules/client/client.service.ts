@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { UserService } from '../user/user.service';
 import { Client } from './client.entity';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class ClientService {
@@ -46,18 +47,18 @@ export class ClientService {
     return this.clientRepository.save(newClient);
   }
 
-  public async update(clientId: string, patch: Partial<Client>, userId: string): Promise<Client> {
-    await this.clientRepository.update(clientId, patch);
-
-    return this.clientRepository.findOneOrFail({
-      where: {
-        id: clientId,
-        user: userId,
-      },
+  public async update(id: string, patch: Partial<Client>, userData: User): Promise<Client> {
+    const user = await this.userService.findOne(userData.id);
+    const client = await this.clientRepository.findOneOrFail({
+      where: { id, user },
     });
+
+    const patched = Object.assign({}, client, patch);
+
+    return await this.clientRepository.save(patched);
   }
 
-  public async delete(id: string, user: string): Promise<Client> {
+  public async delete(id: string, user: User): Promise<Client> {
     const client = await this.clientRepository.findOneOrFail({
       where: { id, user },
     });

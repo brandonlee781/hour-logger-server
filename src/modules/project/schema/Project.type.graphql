@@ -4,6 +4,7 @@ type Project {
   color: String
   favorite: Boolean
   logs: [Log]
+  client: Client
   user: User
   createdAt: String
   updatedAt: String

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Log } from './log.entity';
@@ -10,7 +10,7 @@ import { ProjectModule } from '../project';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Log]),
-    ProjectModule,
+    forwardRef(() => ProjectModule),
     UserModule,
   ],
   providers: [LogService, LogResolver],

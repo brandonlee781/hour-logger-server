@@ -85,24 +85,25 @@ export class Faker {
     return users;
   }
 
-  static generateProject(): Project {
+  static generateProject(userDefault?: User, clientDefault?: Client, projectDefaults: Partial<Project> = {}): Project {
     return {
       id: uuid(),
-      name: faker.internet.domainName(),
-      color: faker.internet.color(),
-      favorite: true,
-      client: Faker.generateClient(),
+      name: projectDefaults.name || faker.internet.domainName(),
+      color: projectDefaults.color || faker.internet.color(),
+      favorite: projectDefaults.favorite || true,
+      client: clientDefault || Faker.generateClient(userDefault || null),
+      user: userDefault || Faker.generateUser(),
       createdAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
       updatedAt: format(new Date(), 'ddd MMM DD YYYY HH:mm:ss ZZ'),
     };
   }
 
-  static generateProjects(count: number): Project[] {
+  static generateProjects(count: number, userDefault?: User, clientDefault?: Client): Project[] {
     let n = 1;
     const projects = [];
 
     while (n <= count) {
-      projects.push(Faker.generateProject());
+      projects.push(Faker.generateProject(userDefault, clientDefault, {}));
       n++;
     }
 

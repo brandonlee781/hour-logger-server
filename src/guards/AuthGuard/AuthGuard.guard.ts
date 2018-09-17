@@ -1,10 +1,13 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as passport from 'passport';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const ctx = GqlExecutionContext.create(context);
+    const request = ctx.getContext().request;
+    // const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
 
     const isAuthenticated = await new Promise<boolean>((resolve, reject) => {
@@ -16,7 +19,7 @@ export class AuthGuard implements CanActivate {
           return resolve(false);
         }
 
-        request.user = payload;
+        ctx.getContext().user = payload;
         return resolve(true);
       })(request, response);
     }).catch(err => {

@@ -4,6 +4,8 @@ import { Project } from './project.entity';
 import { PROJECT_REPO_TOKEN } from '../../constants';
 import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ClientService } from '../client/client.service';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class ProjectService {
@@ -11,11 +13,12 @@ export class ProjectService {
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
     private readonly userService: UserService,
+    private readonly clientService: ClientService,
   ) {}
 
-  async findAll(user): Promise<Project[]> {
+  async findAll(user: User): Promise<Project[]> {
     return await this.projectRepository.find({
-      relations: ['logs'],
+      relations: ['client'],
       where: { user },
       order: {
         name: 'ASC',
@@ -23,27 +26,41 @@ export class ProjectService {
     });
   }
 
-  async findOne(id, user): Promise<Project> {
-    return await this.projectRepository.findOne({
-      relations: ['logs'],
+  async findByClient(client: string, user: User): Promise<Project[]> {
+    return await this.projectRepository.find({
+      relations: ['client'],
+      where: {
+        user,
+        client,
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
+  }
+
+  async findOne(id: string, user: User): Promise<Project> {
+    return await this.projectRepository.findOneOrFail({
+      relations: ['logs', 'client'],
       where: { id, user },
     });
   }
 
-  async create(name, color, userId): Promise<Project> {
-    const user = await this.userService.findOne(userId);
+  async create(projectData: Partial<Project>, clientId: string, userData: Partial<User>): Promise<Project> {
+    const user = await this.userService.findOne(userData.id);
+    const client = await this.clientService.findOne(clientId, user);
     const newProject = new Project();
 
-    newProject.name = name;
-    newProject.color = color;
+    newProject.name = projectData.name;
+    newProject.color = projectData.color;
     newProject.user = user;
+    newProject.client = client;
 
     return await this.projectRepository.save(newProject);
   }
 
-  async update(id, patch, userId): Promise<Project> {
-    const user = await this.userService.findOne(userId);
-    const project = await this.projectRepository.findOne({
+  async update(id: string, patch: Partial<Project>, user: User): Promise<Project> {
+    const project = await this.projectRepository.findOneOrFail({
       where: { id, user },
     });
 
@@ -52,9 +69,8 @@ export class ProjectService {
     return await this.projectRepository.save(patched);
   }
 
-  async toggleFavorite(id, userId): Promise<Project> {
-    const user = await this.userService.findOne(userId);
-    const project = await this.projectRepository.findOne({
+  async toggleFavorite(id: string, user: User): Promise<Project> {
+    const project = await this.projectRepository.findOneOrFail({
       where: { id, user },
     });
     project.favorite = !project.favorite;
@@ -62,15 +78,11 @@ export class ProjectService {
     return await this.projectRepository.save(project);
   }
 
-  async delete(id, user): Promise<Project> {
-    const project = await this.projectRepository.findOne({
+  async delete(id: string, user: User): Promise<Project> {
+    const project = await this.projectRepository.findOneOrFail({
       where: { id, user },
     });
 
-    if (project) {
-      return await this.projectRepository.remove(project);
-    }
-
-    throw new HttpException('Project Not Found', HttpStatus.NOT_FOUND);
+    return await this.projectRepository.remove(project);
   }
 }

@@ -5,6 +5,7 @@ import { LOG_REPO_TOKEN, PROJECT_REPO_TOKEN } from '../../constants';
 import { ProjectService } from '../project/project.service';
 import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../user';
 
 @Injectable()
 export class LogService {
@@ -15,7 +16,7 @@ export class LogService {
     private readonly userService: UserService,
   ) {}
 
-  async findAll(user, { limit = 50, offset = 0 }): Promise<Log[]> {
+  async findAll(user: User, { limit = 50, offset = 0 }): Promise<Log[]> {
     return await this.logRepository.find({
       where: { user },
       take: limit,
@@ -26,13 +27,17 @@ export class LogService {
     });
   }
 
-  async findOne(id, user): Promise<Log> {
+  async findOne(id: string, user: User): Promise<Log> {
     return await this.logRepository.findOne({
       where: { id, user },
     });
   }
 
-  async findAllByProjectName(name, user, { limit = 50, offset = 0 }): Promise<Log[]> {
+  async findAllByProjectName(
+    name: string,
+    user: string,
+    { limit = 50, offset = 0 }: { limit?: number, offset?: number },
+  ): Promise<Log[]> {
     return await this.logRepository
       .createQueryBuilder('log')
       .leftJoinAndSelect('log.project', 'project')
@@ -46,7 +51,11 @@ export class LogService {
       .getMany();
   }
 
-  async findAllByProjectId(id, user, { limit = 50, offset = 0 }): Promise<Log[]> {
+  async findAllByProjectId(
+    id: string,
+    user: string,
+    { limit = 50, offset = 0 }: { limit?: number, offset?: number },
+  ): Promise<Log[]> {
     return await this.logRepository
       .createQueryBuilder('log')
       .leftJoinAndSelect('log.project', 'project')
@@ -64,8 +73,8 @@ export class LogService {
     start = '1970-01-01',
     end = '2100-12-12',
     projects = [],
-    user,
-    { limit = 50, offset = 0 },
+    user: string,
+    { limit = 50, offset = 0 }: { limit?: number, offset?: number },
   ): Promise<Log[]> {
     const query = this.logRepository
       .createQueryBuilder('log')
@@ -85,9 +94,9 @@ export class LogService {
       .getMany();
   }
 
-  async createLog(newLog, userId): Promise<Log> {
-    const project = await this.projectService.findOne(newLog.project, userId);
+  async createLog(newLog: Partial<Log>, userId: string): Promise<Log> {
     const user = await this.userService.findOne(userId);
+    const project = await this.projectService.findOne(newLog.project.id, user);
 
     const log = new Log();
     log.start = newLog.start;

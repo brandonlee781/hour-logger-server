@@ -20,21 +20,18 @@ describe('ClientService', () => {
         {
           provide: getRepositoryToken(Client),
           useValue: {
-            find({ where: { user: userId } }) {
-              return mockClients.filter(c => c.user.id === userId);
+            find({ where: { user: userData } }) {
+              return mockClients.filter(c => c.user.id === userData.id);
             },
-            findOneOrFail({ where: { id, user: userId } }) {
-              return mockClients.find(c => c.id === id && c.user.id === userId) ||
-                new EntityNotFoundError(Client, { id, user: userId });
+            findOneOrFail({ where: { id, user: userData } }) {
+              return mockClients.find(c => c.id === id && c.user.id === userData.id) ||
+                new EntityNotFoundError(Client, { id, user: userData.id });
             },
             save(newClient) {
+              if (newClient.id) {
+                return newClient;
+              }
               return Faker.generateClient(newClient.user, newClient);
-            },
-            update(clientId, patch) {
-              const client = mockClients.find(c => c.id === clientId);
-              const index = mockClients.findIndex(c => c.id === clientId);
-              mockClients[index] = Object.assign({}, client, patch);
-              return true;
             },
             remove(client: Client) {
               const clientIndex = mockClients.findIndex(c => c.id === client.id);
@@ -71,7 +68,7 @@ describe('ClientService', () => {
     it('should return an array of all clients', async () => {
       jest.spyOn(service, 'findAll');
 
-      expect(await service.findAll(user.id)).toEqual(mockClients);
+      expect(await service.findAll(user)).toEqual(mockClients);
     });
 
     it('should return an empty array if user has no clients', async () => {
@@ -86,7 +83,7 @@ describe('ClientService', () => {
     it('should return a single client object', async () => {
       jest.spyOn(service, 'findOne');
 
-      expect(await service.findOne(mockClients[0].id, mockClients[0].user.id))
+      expect(await service.findOne(mockClients[0].id, mockClients[0].user))
         .toEqual(mockClients[0]);
     });
 
@@ -98,7 +95,7 @@ describe('ClientService', () => {
       });
       jest.spyOn(service, 'findOne');
 
-      expect(await service.findOne(mockClients[0].id, newUser.id))
+      expect(await service.findOne(mockClients[0].id, newUser))
         .toEqual(error);
     });
   }); // end findOne
@@ -106,7 +103,7 @@ describe('ClientService', () => {
   describe('create', () => {
     it('should create a new client record', async () => {
       const newClient = Faker.generateClient(user);
-
+      delete newClient.id;
       jest.spyOn(service, 'create');
 
       expect(await service.create(newClient, user))
@@ -128,7 +125,7 @@ describe('ClientService', () => {
 
       jest.spyOn(service, 'update');
 
-      expect(await service.update(mockClients[0].id, patch, user.id))
+      expect(await service.update(mockClients[0].id, patch, user))
         .toEqual(updatedClient);
     });
   }); // end update
@@ -137,7 +134,7 @@ describe('ClientService', () => {
     it('should delete an existing client record', async () => {
       const clientId = mockClients[0].id;
       const spy = jest.spyOn(service, 'delete');
-      const response = await service.delete(clientId, user.id);
+      const response = await service.delete(clientId, user);
 
       expect(spy).toBeCalled();
       expect(response.id).toBeUndefined();
@@ -154,7 +151,7 @@ describe('ClientService', () => {
 
       jest.spyOn(service, 'delete');
 
-      expect(await service.delete(invalidId, user.id))
+      expect(await service.delete(invalidId, user))
         .toEqual(error);
     });
   }); // end delete
